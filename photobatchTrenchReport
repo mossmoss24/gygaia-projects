@@ -1,0 +1,95 @@
+# fileReport.py can generate a .csv for a folder containing "photobatch" subfolders. Generated report will give number of jpeg images, indicate which files are present or absent, and will give the average elevation of coded targets in a coded target text file (if properly formatted). On execution, the file prompts for the path containing photobatch folders.
+# written by Emanuel Moss - 2017 for Gygaia Projects (http://www.gygaia.org/)
+# contact gygaiaprojects@gmail.com for proper attribution
+
+import os
+import csv
+
+directory = raw_input("enter directory for report")
+
+inv = {}
+
+for f in os.listdir(directory):
+    inv[f] ='photobatch'
+
+for i in inv:
+    inv[i] = {'contents': os.listdir(directory + "\\" + i)}
+
+for i in inv:
+    inv[i]['contents']
+
+report = {}
+
+for i in inv:
+    jpegz = 0
+    pdf = 0
+    psz = 0
+    xyz = 0
+    ct = 0
+    psx = 0
+    for j in inv[i]:
+        for k in inv[i][j]:
+            if k[-4:] == '.jpg':
+                jpegz +=1
+            else:
+                if k[-4:] == ".pdf":
+                    pdf = 1
+                else:
+                    if k[-4:] == '.psz':
+                        psz = 1
+                    else:
+                        if k[-7:] == 'xyz.txt':
+                            xyz = 1
+                        else:
+                            if k == i + '.txt':
+                                ct = 1
+                            else:
+                                if k == i + '.psx':
+                                    psx = 1
+                                else:
+                                    pass
+            report[i] = {'jpeg': jpegz, 'pdf': pdf, 'psz': psz, 'psx': psx, 'xyz' : xyz, 'ct' : ct}
+
+for i in report:
+    if report[i]['ct'] == 1:
+        ctPath = directory + "\\" + i + "\\" + i +".txt"
+        targetZ = []
+        height = 0
+        if os.path.isfile(ctPath):
+            with open(ctPath) as f:
+                for m, l in enumerate(f):
+                    line = (l.split(","))
+                    try:
+                        targetZ.append(float(line[-2]))
+                    except:
+                        ct = "CT Error"
+            for z in targetZ:
+                try:
+                    height += float(z)
+                except:
+                    ct = "CT Error"
+            try:
+                ct = (height / len(targetZ))
+                report[i]['ct'] = ct
+            except:
+                ct = "CT Error"
+        else:
+            report[i]['ct'] = "CT Error"
+    else:
+        pass
+
+# Write results of report to .csv
+
+# Set path and title of .csv to be created
+writeFile = directory + "\\" + 'report.csv'
+# List file types to get attributes
+fileTypes = ['jpeg', 'pdf', 'psz', 'psx', 'xyz', 'ct']
+
+#open new file as report.csv
+with open(writeFile, 'wb') as csv_file:
+    writer = csv.writer(csv_file)
+    writer.writerow(['# Photos', 'PDF', 'PSZ', 'PSX', 'XYZ', 'Elev', 'Photobatch'])
+    for i in report:
+        newLine = [report[i][x] for x in fileTypes]
+        newLine.append("_" + str(i))
+        writer.writerow(newLine)
